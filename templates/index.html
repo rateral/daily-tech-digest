@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デイリーテックダイジェスト</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-newspaper"></i> デイリーテックダイジェスト</h1>
+            <p class="subtitle">今日の最新テクノロジーニュースをまとめてお届け</p>
+            <div class="update-info">
+                <span id="last-updated">最終更新: 読み込み中...</span>
+                <button id="refresh-btn" class="refresh-btn">
+                    <i class="fas fa-sync-alt"></i> 更新
+                </button>
+            </div>
+        </header>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>ニュースを取得中...</p>
+        </div>
+
+        <div class="error-message" id="error-message" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="error-text"></span>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-item">
+                <i class="fas fa-newspaper"></i>
+                <span>総記事数: <strong id="total-count">0</strong></span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-clock"></i>
+                <span>今日の記事</span>
+            </div>
+        </div>
+
+        <div class="news-sources" id="news-sources">
+            <!-- ニュースソースごとのセクションがここに動的に追加されます -->
+        </div>
+
+        <footer class="footer">
+            <p>&copy; 2024 デイリーテックダイジェスト. データは各ニュースサイトから取得しています。</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html> 
