@@ -76,6 +76,8 @@ class NewsAggregator:
             root = ET.fromstring(response.content)
             news_items = []
             today = datetime.now().date()
+            # 過去2日間の記事も取得するように変更
+            two_days_ago = today - timedelta(days=2)
             
             # RSS 2.0形式の場合
             items = root.findall('.//item')
@@ -122,8 +124,8 @@ class NewsAggregator:
                     else:
                         pub_date = today
                     
-                    # 今日の記事のみを取得
-                    if pub_date == today:
+                    # 過去2日間の記事を取得（より多くの記事を取得）
+                    if pub_date >= two_days_ago:
                         news_items.append({
                             'title': title.strip(),
                             'link': link.strip(),
@@ -186,20 +188,26 @@ class NewsAggregator:
         
         for source_name, source_info in self.news_sources.items():
             try:
-                print(f"Fetching news from {source_name}...")
+                print(f"=== Fetching news from {source_name} ===")
+                print(f"RSS URL: {source_info['rss']}")
                 
                 # まずRSSから取得を試行（タイムアウトを短縮）
                 rss_news = self.get_news_from_rss(source_name, source_info['rss'])
                 
                 if rss_news:
                     all_news.extend(rss_news)
-                    print(f"Found {len(rss_news)} articles from {source_name} RSS")
+                    print(f"✓ Found {len(rss_news)} articles from {source_name} RSS")
+                    for article in rss_news[:2]:  # 最初の2件のタイトルを表示
+                        print(f"  - {article['title'][:50]}...")
                 else:
                     # RSSが失敗した場合はWebスクレイピングを試行
-                    print(f"RSS failed for {source_name}, trying web scraping...")
+                    print(f"✗ RSS failed for {source_name}, trying web scraping...")
                     web_news = self.get_news_from_web(source_name, source_info['url'], source_info['selector'])
-                    all_news.extend(web_news)
-                    print(f"Found {len(web_news)} articles from {source_name} web scraping")
+                    if web_news:
+                        all_news.extend(web_news)
+                        print(f"✓ Found {len(web_news)} articles from {source_name} web scraping")
+                    else:
+                        print(f"✗ Web scraping also failed for {source_name}")
                 
                 # Vercelのタイムアウト対策: 待機時間を短縮
                 time.sleep(0.5)
@@ -209,16 +217,16 @@ class NewsAggregator:
                 if hasattr(self, 'start_time'):
                     elapsed = time_module.time() - self.start_time
                     if elapsed > 7:
-                        print(f"Timeout approaching, stopping at {source_name}")
+                        print(f"⏰ Timeout approaching ({elapsed:.1f}s), stopping at {source_name}")
                         break
                 else:
                     self.start_time = time_module.time()
                     
             except Exception as e:
-                print(f"Error processing {source_name}: {e}")
+                print(f"✗ Error processing {source_name}: {e}")
                 continue
         
-        print(f"Total articles found: {len(all_news)}")
+        print(f"=== Summary: Total {len(all_news)} articles found ===")
         return all_news
 
 # グローバルインスタンス
