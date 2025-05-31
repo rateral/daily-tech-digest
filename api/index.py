@@ -6,8 +6,14 @@ import re
 import time
 from urllib.parse import urljoin, urlparse
 import xml.etree.ElementTree as ET
+import os
 
-app = Flask(__name__)
+# 現在のファイルのディレクトリから一つ上のディレクトリ（プロジェクトルート）を取得
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+app = Flask(__name__, 
+           template_folder=os.path.join(BASE_DIR, 'templates'),
+           static_folder=os.path.join(BASE_DIR, 'static'))
 
 class NewsAggregator:
     def __init__(self):
@@ -227,8 +233,9 @@ def get_news():
         }), 500
 
 # Vercel用のエクスポート
+def handler(request):
+    return app(request.environ, request.start_response)
+
+# 通常の実行用
 if __name__ == '__main__':
-    app.run(debug=False)
-else:
-    # Vercel用
-    application = app 
+    app.run(debug=False) 
