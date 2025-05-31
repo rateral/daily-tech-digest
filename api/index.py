@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, send_from_directory
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
@@ -228,6 +228,12 @@ news_aggregator = NewsAggregator()
 def index():
     """メインページ"""
     return render_template('index.html')
+
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    """静的ファイルの配信"""
+    static_dir = os.path.join(BASE_DIR, 'static')
+    return send_from_directory(static_dir, filename)
 
 @app.route('/api/test')
 def test():
