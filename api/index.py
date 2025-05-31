@@ -232,9 +232,8 @@ def get_news():
             'error': str(e)
         }), 500
 
-# Vercel用のエクスポート
-def handler(request):
-    return app(request.environ, request.start_response)
+# Vercel用のエクスポート - 最新の仕様に合わせて修正
+app.wsgi_app = app.wsgi_app
 
 # 通常の実行用
 if __name__ == '__main__':
