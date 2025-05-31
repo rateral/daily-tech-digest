@@ -69,7 +69,7 @@ class NewsAggregator:
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             }
-            response = requests.get(rss_url, headers=headers, timeout=10)
+            response = requests.get(rss_url, headers=headers, timeout=5)
             response.raise_for_status()
             
             # XMLを解析
@@ -146,7 +146,7 @@ class NewsAggregator:
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             }
-            response = requests.get(url, headers=headers, timeout=10)
+            response = requests.get(url, headers=headers, timeout=5)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.content, 'html.parser')
@@ -185,23 +185,38 @@ class NewsAggregator:
         all_news = []
         
         for source_name, source_info in self.news_sources.items():
-            print(f"Fetching news from {source_name}...")
-            
-            # まずRSSから取得を試行
-            rss_news = self.get_news_from_rss(source_name, source_info['rss'])
-            
-            if rss_news:
-                all_news.extend(rss_news)
-                print(f"Found {len(rss_news)} articles from {source_name} RSS")
-            else:
-                # RSSが失敗した場合はWebスクレイピングを試行
-                print(f"RSS failed for {source_name}, trying web scraping...")
-                web_news = self.get_news_from_web(source_name, source_info['url'], source_info['selector'])
-                all_news.extend(web_news)
-                print(f"Found {len(web_news)} articles from {source_name} web scraping")
-            
-            # レート制限のため少し待機
-            time.sleep(1)
+            try:
+                print(f"Fetching news from {source_name}...")
+                
+                # まずRSSから取得を試行（タイムアウトを短縮）
+                rss_news = self.get_news_from_rss(source_name, source_info['rss'])
+                
+                if rss_news:
+                    all_news.extend(rss_news)
+                    print(f"Found {len(rss_news)} articles from {source_name} RSS")
+                else:
+                    # RSSが失敗した場合はWebスクレイピングを試行
+                    print(f"RSS failed for {source_name}, trying web scraping...")
+                    web_news = self.get_news_from_web(source_name, source_info['url'], source_info['selector'])
+                    all_news.extend(web_news)
+                    print(f"Found {len(web_news)} articles from {source_name} web scraping")
+                
+                # Vercelのタイムアウト対策: 待機時間を短縮
+                time.sleep(0.5)
+                
+                # 7秒経過したら残りのソースをスキップ（Vercelの10秒制限対策）
+                import time as time_module
+                if hasattr(self, 'start_time'):
+                    elapsed = time_module.time() - self.start_time
+                    if elapsed > 7:
+                        print(f"Timeout approaching, stopping at {source_name}")
+                        break
+                else:
+                    self.start_time = time_module.time()
+                    
+            except Exception as e:
+                print(f"Error processing {source_name}: {e}")
+                continue
         
         print(f"Total articles found: {len(all_news)}")
         return all_news
@@ -213,6 +228,15 @@ news_aggregator = NewsAggregator()
 def index():
     """メインページ"""
     return render_template('index.html')
+
+@app.route('/api/test')
+def test():
+    """テスト用APIエンドポイント"""
+    return jsonify({
+        'success': True,
+        'message': 'API is working!',
+        'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    })
 
 @app.route('/api/news')
 def get_news():
